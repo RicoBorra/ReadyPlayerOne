@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>ReadyPlayerOne</title>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@300&display=swap');
+      canvas {
+        width: 100%;
+        height: 100%;
+        position: fixed;
+        left: 0;
+        top: 0;
+        z-index: -1;
+      }
+    </style>
+  </head>
+  <body>
+    <div style="display:none;">
+      <img id="arcade" src="/static/ready.png">
+    </div>
+    <p id="a"></p>
+    <canvas id="pong"></canvas>
+    <script>
+      var canvas;
+      var canvasContext;
+      var screenX;
+      var screenY;
+      var screenW;
+      var screenH;
+
+      var ballX = 50;
+      var ballSpeedX = 10;
+      var ballY = 150;
+      var ballSpeedY = 2;
+
+      var paddle1Y = 250;
+      var paddle2Y = 250;
+      var PADDLE_HEIGHT1 = 100;
+      var PADDLE_HEIGHT2 = 100;
+      var PADDLE_THICC = 10;
+      var BORDER = 5;
+      const WINNING_SCORE = 5;
+      const scale = 0.010;
+
+      var player1score = 0;
+      var player2score = 0;
+      var time = 0;
+      var showingWinScreen = false;
+      var welcome = true;
+      var result;
+      var initH;
+
+      window.onload = function (){
+        canvas = document.getElementById("pong");
+        canvasContext = canvas.getContext("2d");
+        arc = document.getElementById("arcade");
+
+        const FPS = 50;
+
+        initH = canvas.clientHeight;
+
+        setUpCanvas();
+
+        ballX = (50/600)*screenH;
+        ballSpeedX = (10/600)*screenH;
+        ballY = (150/600)*screenH;
+        ballSpeedY = (2/600)*screenH;
+        paddle1Y = (250/600)*screenH;
+        paddle2Y = (250/600)*screenH;
+        PADDLE_HEIGHT1 = (100/600)*screenH;
+        PADDLE_HEIGHT2 = (100/600)*screenH;
+
+        canvasContext.drawImage(arc, (canvas.width-canvas.height)/2, 0, canvas.height, canvas.height);
+
+        setInterval(function(){
+          if (welcome){
+            welcomeFun();
+          } else {
+            moveFun();
+            drawFun();
+          }
+          time++;
+        }, 1000/FPS);
+
+        canvas.addEventListener("mousemove", function(evt){
+          var mousePos = calculateMousePos(evt);
+          paddle1Y = mousePos.y - 0.5*PADDLE_HEIGHT1 - screenY;
+        })
+        canvas.addEventListener("mousedown", handleMouseClick)
+      }
+
+      function welcomeFun(){
+        setUpCanvas();
+        canvasContext.font = 9*canvas.height*scale + 'px Source Code Pro';
+        canvasContext.drawImage(arc, (canvas.width-canvas.height)/2, 0, canvas.height, canvas.height);
+        canvasContext.fillText("pwnthem0le", canvas.width/2 - canvas.height*0.01*9*6*0.5, canvas.height*0.075);
+        canvasContext.font = 5*canvas.height*scale + 'px Source Code Pro';
+        colorRect(screenX, screenY, screenW, screenH, "black");
+        canvasContext.fillStyle = "white";
+        canvasContext.fillText("Ready Player 0ne ?", screenX + (100/600)*screenH, screenY + (200/600)*screenH);
+        canvasContext.font = 2.5*canvas.height*scale + 'px Source Code Pro';
+        canvasContext.fillText("click to play", screenX + (250/600)*screenH, screenY + (400/600)*screenH);
+      }
+
+      function handleMouseClick(){
+        if (showingWinScreen){
+          time = 0;
+          player1score = 0;
+          player2score = 0;
+          PADDLE_HEIGHT1 = (100/600)*screenH;
+          PADDLE_HEIGHT2 = (100/600)*screenH;
+          paddle1Y = (250/600)*screenH;
+          paddle2Y = (250/600)*screenH;
+          showingWinScreen = false;
+        }
+        if (welcome){
+          welcome = false;
+        }
+      }
+
+      function calculateMousePos(evt){
+        var rect = canvas.getBoundingClientRect();
+        var root = document.documentElement;
+        var mouseX = evt.clientX - rect.left - root.scrollLeft;
+        var mouseY = evt.clientY - rect.top - root.scrollTop;
+
+        return {
+          x:mouseX,
+          y:mouseY
+        };
+      }
+
+      function ballReset(){
+        acquanel();
+        if (player1score >= WINNING_SCORE || player2score >=WINNING_SCORE){
+          showingWinScreen = true;
+          deserto();
+        }
+
+        //some serious evil shit
+        if (player1score != 0){
+          PADDLE_HEIGHT2 = PADDLE_HEIGHT2*2;
+          PADDLE_HEIGHT1 = PADDLE_HEIGHT1*0.5;
+        }
+
+        ballX = screenW/2;
+        ballY = screenH/2;
+        if (ballSpeedX > 0){
+          ballSpeedX = (10/600)*screenH;
+        } else {
+          ballSpeedX = -(10/600)*screenH;
+        }
+        if (ballSpeedY > 0){
+          ballSpeedY = (2/600)*screenH;
+        } else {
+          ballSpeedY = -(2/600)*screenH;
+        }
+      }
+
+      function computermovement(){
+        if (paddle2Y+PADDLE_HEIGHT2/2 < ballY-0.2*PADDLE_HEIGHT2){
+          paddle2Y += (5/600)*screenH;
+        } else{
+          paddle2Y -= (5/600)*screenH;
+        }
+      }
+
+      function moveFun(){
+        if (showingWinScreen) return;
+        computermovement();
+
+        ballX = ballX + ballSpeedX;
+        ballY = ballY + ballSpeedY;
+        if (ballX >= screenW-BORDER || ballX <= BORDER){
+          ballSpeedX = -ballSpeedX;
+        }
+        if (ballX <= BORDER){
+          if(!(ballY > paddle1Y && ballY < paddle1Y + PADDLE_HEIGHT1)){
+            player2score++;
+            ballReset();
+          } else{
+            var deltaY = ballY - (paddle1Y + PADDLE_HEIGHT1/2);
+            ballSpeedY = deltaY*0.30;
+          }
+        }
+        if (ballY >= screenH || ballY <= 0){
+          ballSpeedY = -ballSpeedY;
+        }
+        if (ballX >= screenW - BORDER){
+          if(!(ballY > paddle2Y && ballY < paddle2Y + PADDLE_HEIGHT2)){
+            player1score++;
+            ballReset();
+          } else{
+            var deltaY = ballY - (paddle2Y + PADDLE_HEIGHT2/2);
+            ballSpeedY = deltaY*0.20;
+          }
+        }
+      }
+
+      function colorRect(leftX, topY, width, height, color){
+        canvasContext.fillStyle = color;
+        canvasContext.fillRect(leftX, topY, width, height);
+      }
+
+      function colorCircle(centerX, centerY, radius, color){
+        canvasContext.fillStyle = color;
+        canvasContext.beginPath();
+        canvasContext.arc(centerX, centerY, radius, 0, Math.PI*2, true);
+        canvasContext.fill();
+      }
+
+      function drawNet(){
+        for (var i = 0; i < screenH; i += (40/600)*screenH){
+          colorRect(screenX + screenW/2 - 1, screenY + i, (2/600)*screenH, (20/600)*screenH, "green");
+        }
+      }
+
+      function min(a, b){
+        return (a > b)? b: a;
+      }
+
+      function max(a, b){
+        return (a > b)? a: b;
+      }
+
+      function setUpCanvas(){ //graphics 4 responsiveness
+        canvas.width = canvas.clientWidth;
+        canvas.height = canvas.clientHeight;
+
+        screenX = canvas.width/2 - (canvas.height*0.333);
+        screenY = canvas.height*0.25;
+        screenH = canvas.height*0.5;
+        screenW = screenH*(8/6);
+
+        PADDLE_THICC = (10/600)*screenH;
+        BORDER = (5/600)*screenH;
+      }
+
+      function heightleft(){
+        if ((paddle1Y + PADDLE_HEIGHT1) > screenH) {
+          return max(screenH - paddle1Y, 0);
+        }
+        if (paddle1Y < 0) {
+          return max(PADDLE_HEIGHT1 + paddle1Y, 0);
+        }
+        return PADDLE_HEIGHT1;
+      }
+
+      function heightright(){
+        if ((paddle2Y + PADDLE_HEIGHT2) > screenH) {
+          return max(screenH - paddle2Y, 0);
+        }
+        if (paddle2Y < 0) {
+          return max(PADDLE_HEIGHT2 + paddle2Y, 0);
+        }
+        return PADDLE_HEIGHT2;
+      }
+
+      function lefty(){
+        if (paddle1Y < 0) {
+          return screenY;
+        }
+        return screenY + paddle1Y;
+      }
+
+      function righty(){
+        if (paddle2Y < 0) {
+          return screenY;
+        }
+        return screenY + paddle2Y;
+      }
+
+      async function drawFun(){
+        //screen
+        setUpCanvas();
+        canvasContext.font = 9*canvas.height*scale + 'px Source Code Pro';
+        canvasContext.drawImage(arc, (canvas.width-canvas.height)/2, 0, canvas.height, canvas.height);
+        canvasContext.fillText("pwnthem0le", canvas.width/2 - canvas.height*0.01*9*6*0.5, canvas.height*0.075);
+        canvasContext.font = 3.5*canvas.height*scale + 'px Source Code Pro';
+        colorRect(screenX, screenY, screenW, screenH, "black");
+        if (showingWinScreen){
+          canvasContext.fillStyle = "white";
+          if (player1score > player2score){
+            canvasContext.fillText(result, screenX + (100/600)*screenH, screenY + (100/600)*screenH);
+          } else{
+            canvasContext.fillText("You lost... No flag for you", screenX + (50/600)*screenH, screenY + (100/600)*screenH);
+          }
+          canvasContext.font = 2.5*canvas.height*scale + 'px Source Code Pro';
+          canvasContext.fillText("click to play again", screenX + (200/600)*screenH, screenY + (300/600)*screenH);
+          return;
+        }
+        //left paddle
+        colorRect(screenX + BORDER, lefty(), PADDLE_THICC, min(heightleft(), screenH), "white");
+        //right paddle
+        colorRect(screenX + screenW - PADDLE_THICC - BORDER, righty(), PADDLE_THICC, min(heightright(), screenH), "white");
+        drawNet();
+        //ball
+        colorCircle(screenX + ballX, screenY + ballY, (15/600)*screenH, "red");
+        //score
+        canvasContext.fillStyle = "white";
+        canvasContext.fillText(player1score, screenX + (100/600)*screenH, screenY + (100/600)*screenH);
+        canvasContext.fillText(player2score, screenX + screenW-(100/600)*screenH, screenY + (100/600)*screenH);
+      }
+
+      function acquanel(){
+        var xhttp = new XMLHttpRequest();
+        xhttp.open("POST", "data", true);
+        xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        xhttp.send("p1s="+player1score+"&p2s="+player2score+"&time="+time);
+        return;
+      }
+
+      function deserto(){
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+          if (this.readyState == 4 && this.status == 200) {
+            result = this.responseText;
+          }
+        };
+        xhttp.open("GET", "verify", true);
+        xhttp.send();
+      }
+
+    </script>
+  </body>
+</html>
