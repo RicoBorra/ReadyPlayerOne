@@ -49,8 +49,8 @@ def aggiungi_id(resp):
         con.commit()
         con.close()
     resp.set_cookie('userID', str(id))
-    string = "fumozatla" + str(id)
-    resp.set_cookie('hashish', sha256(string.encode()).hexdigest())
+    string = "stringacasuale123" + str(id)
+    resp.set_cookie('hash', sha256(string.encode()).hexdigest())
     return
 
 @app.route("/")
@@ -70,8 +70,8 @@ def data():
     except Exception as e:
         return "ko"
     try:
-        string = "fumozatla" + str(id)
-        if request.cookies.get("hashish") == sha256(string.encode()).hexdigest():
+        string = "stringacasuale123" + str(id)
+        if request.cookies.get("hash") == sha256(string.encode()).hexdigest():
             add_data(id, int(data.get('p1s')), int(data.get('p2s')))
     except Exception as e:
         print(e)
@@ -83,9 +83,9 @@ def verify():
     try:
         id = int(request.cookies.get("userID"))
         if check(id):
-            string = "fumozatla" + str(id)
+            string = "stringacasuale123" + str(id)
             try:
-                if request.cookies.get("hashish") != sha256(string.encode()).hexdigest():
+                if request.cookies.get("hash") != sha256(string.encode()).hexdigest():
                     return "No stealing plz..."
             except:
                 return "No stealing plz..."
