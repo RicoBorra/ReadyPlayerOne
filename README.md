@@ -5,7 +5,7 @@ m0leCon beginner CTF 2021 was a beginner-friendly capture the flag competition o
 ### ReadyPlayerOne
 This is a CTF challenge designed for beginners. To use it just run 
 ```console
-$ docker compose up
+$ docker-compose up
 ```
  and connect to localhost on a browser, alternatively host it on your machine and have friends play it without the sources available!
 ## Spoilers ahead!
